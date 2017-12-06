@@ -3,23 +3,17 @@ import pandas as pd
 import sklearn.preprocessing as pre
 import sys
 
-
-
 train = pd.read_csv("./train.csv")
 test = pd.read_csv("./test.csv")
 md = pd.read_csv("./meta_data.csv")
 
-# print((train["YearRemodAdd"].unique()))
-# print(train.dtypes["MiscVal"])
-
-a = ["NaN", "MnWw", "GdWo", "MnPrv", "GdPrv"]
-
 # Read ordinal features meta data
-ordinal_arrays={}
-with open("./ordinals_meta_data.csv",mode="r") as f:
+ordinal_arrays = {}
+with open("./ordinals_meta_data.csv", mode="r") as f:
     for line in f:
-        splited=line.split(',')
-        ordinal_arrays[splited[0]]=splited[1:]
+        splited = line.split(',')
+        ordinal_arrays[splited[0]] = splited[1:]
+
 
 def process_numeric(train, test, column_name):
     # get mean of training data
@@ -48,13 +42,16 @@ def process_ordinal(train, test, column_name, map_array):
     map = {}
     for i in range(0, len(map_array)):
         map[map_array[i]] = i
+
+    # Replace by the map
     train[column_name] = train[column_name].fillna(0)
     train[column_name].replace(map, inplace=True)
 
     test[column_name] = test[column_name].fillna(0)
     test[column_name].replace(map, inplace=True)
 
-    return train,test
+    return train, test
+
 
 def process_categorical(train, test, column_name):
     # replace NA with a dummy variable
@@ -109,4 +106,5 @@ def process_categorical(train, test, column_name):
 
     return train, test
 
-process_categorical(train,test,"MiscFeature")
+
+process_categorical(train, test, "MiscFeature")
