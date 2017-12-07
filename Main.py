@@ -55,6 +55,7 @@ def modelfit(xgb_params, train_matrix, test_matrix, label_matrix, useTrainCV=Tru
 
     #get prediction
     res=model.predict(xgTest)
+
     print(res)
 
 
