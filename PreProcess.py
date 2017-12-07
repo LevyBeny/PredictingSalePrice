@@ -2,17 +2,7 @@ import learn as learn
 import pandas as pd
 import sklearn.preprocessing as pre
 import sys
-
-train = pd.read_csv("./train.csv")
-test = pd.read_csv("./test.csv")
-md = pd.read_csv("./meta_data.csv")
-
-# Read ordinal features meta data
-ordinal_arrays = {}
-with open("./ordinals_meta_data.csv", mode="r") as f:
-    for line in f:
-        splited = line.split(',')
-        ordinal_arrays[splited[0]] = splited[1:]
+import re
 
 
 def process_numeric(train, test, column_name):
@@ -54,6 +44,10 @@ def process_ordinal(train, test, column_name, map_array):
 
 
 def process_categorical(train, test, column_name):
+    if column_name == "MSSubClass":
+        train["MSSubClass"] = train["MSSubClass"].astype(str)
+        test["MSSubClass"] = test["MSSubClass"].astype(str)
+
     # replace NA with a dummy variable
     train[column_name] = train[column_name].fillna('_missing')
     test[column_name] = test[column_name].fillna('_missing')
@@ -105,6 +99,3 @@ def process_categorical(train, test, column_name):
     del test[column_name]
 
     return train, test
-
-
-process_categorical(train, test, "MiscFeature")

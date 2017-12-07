@@ -1,8 +1,8 @@
 LotShape,IR3,IR2,IR1,Reg
-Utilities,ELO,NoSeWa,NoSewr
+Utilities,ELO,NoSeWa,NoSewr,AllPub
 LandSlope,Gtl,Mod,Sev
 Exterior1st,AsbShng,AsphShn,BrkComm,BrkFace,CBlock,CemntBd,HdBoard,ImStucc,MetalSd,Other,Plywood,Precast,Stone,Stucco,VinylSd,Wd Sdng,WdShing
-Exterior2nd,AsbShng,AsphShn,BrkComm,BrkFace,CBlock,CemntBd,HdBoard,ImStucc,MetalSd,Other,Plywood,Precast,Stone,Stucco,VinylSd,Wd Sdng,WdShing
+Exterior2nd,AsbShng,AsphShn,Brk Cmn,BrkFace,CBlock,CmentBd,HdBoard,ImStucc,MetalSd,Other,Plywood,Precast,Stone,Stucco,VinylSd,Wd Sdng,Wd Shng
 ExterQual,Po,Fa,TA,Gd,Ex
 ExterCond,Po,Fa,TA,Gd,Ex
 BsmtQual,NA,Po,Fa,TA,Gd,Ex
@@ -13,7 +13,7 @@ BsmtFinType2,NA,Unf,LwQ,Rec,BLQ,ALQ,GLQ
 HeatingQC,Po,Fa,TA,Gd,Ex
 KitchenQual,Po,Fa,TA,Gd,Ex
 Functional,Sal,Sev,Maj2,Maj1,Mod,Min2,Min1,Typ
-FireplaceQu,TA,Gd,Ex
+FireplaceQu,NA,Po,Fa,TA,Gd,Ex
 GarageFinish,NA,Unf,RFn,Fin
 GarageQual,NA,Po,Fa,TA,Gd,Ex
 GarageCond,NA,Po,Fa,TA,Gd,Ex
