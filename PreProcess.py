@@ -1,5 +1,6 @@
 import learn as learn
 import pandas as pd
+import numpy as np
 import sklearn.preprocessing as pre
 import sys
 import re
@@ -99,3 +100,66 @@ def process_categorical(train, test, column_name):
     del test[column_name]
 
     return train, test
+
+
+def remove_lowDeviation(train, predictors,treshold=0.05):
+    res=[]
+    for column in predictors:
+        if np.std(train[column])<=treshold:
+            continue
+        res.append(column)
+    return res
+
+
+def remove_lowImportance(train, predictors,treshold=0.045):
+    res=[]
+    for column in predictors:
+        column_target = train[[column,'SalePrice']]
+        p=column_target.corr('pearson')["SalePrice"][0]
+        k=column_target.corr('kendall')["SalePrice"][0]
+        s=column_target.corr('spearman')["SalePrice"][0]
+        cor=(p+k+s)/3
+        if -1*treshold<cor and cor<treshold:
+            continue
+        res.append(column)
+    return res
+
+
+def remove_similar(train, predictors, treshold=0.75):
+    to_remove = []
+    p = train.corr('pearson')
+    k = train.corr('kendall')
+    s = train.corr('spearman')
+    corr_df=p+k+s
+    corr_df=corr_df.divide(3)
+    overlapping=[]
+    for column1 in predictors:
+        overlapping.append(column1)
+        for column2 in predictors:
+            if column2 in overlapping:
+                continue
+            cor=corr_df.loc[column1,column2]
+            if -1 * treshold > cor or cor > treshold:
+                if corr_df.loc[column1,"SalePrice"]>corr_df.loc[column2,"SalePrice"]:
+                    to_remove.append(column2)
+                    overlapping.append(column2)
+                else:
+                    to_remove.append(column1)
+                    break
+
+    return list(set(predictors)-set(to_remove))
+
+
+
+
+def features_selection(train,predictors,tresh_deviation,tresh_importance,tresh_similarity):
+    print(len(predictors))
+    predictors=remove_lowDeviation(train,predictors,tresh_deviation)
+    print(len(predictors))
+    predictors=remove_lowImportance(train,predictors, tresh_importance)
+    print(len(predictors))
+    predictors=remove_similar(train,predictors, tresh_similarity)
+    print(len(predictors))
+
+
+    return predictors

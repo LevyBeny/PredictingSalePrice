@@ -1,7 +1,8 @@
 import PreProcess as pre
 import xgboost as xgb
+from xgboost.sklearn import XGBRegressor
 import pandas as pd
-import matplotlib as plt
+import OptimizeXgbParameters as opt
 
 train = pd.read_csv("./train.csv")
 test = pd.read_csv("./test.csv")
@@ -23,56 +24,74 @@ for column_name, column_type in train.dtypes.iteritems():
     elif column_name in ordinal_arrays.keys():
         train, test = pre.process_ordinal(train, test, column_name, ordinal_arrays[column_name])
     elif column_type != object:
-        train, test = pre.process_numeric(train, test, column_name)
+        # train, test = pre.process_numeric(train, test, column_name)
+        continue
     else:
         train, test = pre.process_categorical(train, test, column_name)
 
 # contains all the columns names ( without 'SalePrice' and without 'Id' )
-columns = list(test)
-columns.remove("Id")
+predictors = list(test)
+predictors.remove("Id")
 
-# Convert the pandas DF to 2D numpy array
-train_matrix = train.as_matrix(columns)
-test_matrix = test.as_matrix(columns)
-label_matrix=train["SalePrice"].values
+_tresh_deviation=0.05
+_tresh_importance=0.045
+_tresh_similarity=0.75
 
-xgb_params={'booster': 'dart','eta': 0.3, 'seed':0, 'subsample': 0.8, 'colsample_bytree': 0.8,
-             'max_depth':8, 'min_child_weight':4,
-            'rate_drop': 0.1,'skip_drop': 0.5,'normalize_type': 'tree'}
-
-def modelfit(xgb_params, train_matrix, test_matrix, label_matrix, useTrainCV=True, cv_folds=5, early_stopping_rounds=50):
-
-    #tune number of trees using cv
-    xgtrain = xgb.DMatrix(train_matrix, label=label_matrix)
-    cvresult = xgb.cv(xgb_params, xgtrain, num_boost_round=10000, nfold=cv_folds,
-                      metrics='rmse', early_stopping_rounds=early_stopping_rounds)
-
-    #train the model
-    model=xgb.train(xgb_params,xgtrain,cvresult.shape[0])
-
-    #test to DMatrix format
-    xgTest=xgb.DMatrix(test_matrix)
-
-    #get prediction
-    res=model.predict(xgTest)
-
-    print(res)
+predictors=pre.features_selection(train,predictors,_tresh_deviation,_tresh_importance,_tresh_similarity)
 
 
-    ids=range(1461,(1461+len(res)))
-    result_df=pd.DataFrame({"Id":ids,"SalePrice":res})
-    result_df.to_csv("./submission2.csv")
-    # # Predict training set:
-    # dtrain_predictions = alg.predict(dtrain[predictors])
-    # dtrain_predprob = alg.predict_proba(dtrain[predictors])[:, 1]
-    #
-    # # Print model report:
-    # print ("\nModel Report")
-    # print ("Accuracy : %.4g" % metrics.accuracy_score(dtrain['Disbursed'].values, dtrain_predictions))
-    # print("AUC Score (Train): %f" % metrics.roc_auc_score(dtrain['Disbursed'], dtrain_predprob))
-    #
-    # feat_imp = pd.Series(alg.booster().get_fscore()).sort_values(ascending=False)
-    # plt=feat_imp.plot(kind='bar', title='Feature Importances')
-    # plt.ylabel('Feature Importance Score')
 
-modelfit(xgb_params,train_matrix, test_matrix,label_matrix)
+train_matrix = train.as_matrix(predictors)
+test_matrix = test.as_matrix(predictors)
+labels = train["SalePrice"].values
+
+dart_params = {'rate_drop': 0.1, 'skip_drop': 0.5}
+
+model = XGBRegressor(max_depth=8, learning_rate=0.05, n_estimators=10000, silent=True,
+                     objective='reg:linear', booster='dart', gamma=0.0468, min_child_weight=4,
+                     max_delta_step=0, subsample=0.5213, colsample_bytree=0.8, colsample_bylevel=1,
+                     scale_pos_weight=1, base_score=0.5, random_state=0, missing=None, kwargs=dart_params)
+# model = xgb.XGBRegressor(colsample_bytree=0.4603, gamma=0.0468,
+#                              learning_rate=0.05, max_depth=3,
+#                              min_child_weight=1.7817, n_estimators=2200,
+#                              reg_alpha=0.4640, reg_lambda=0.8571,
+#                              subsample=0.5213, silent=1,
+#                              random_state =7, nthread = -1)
+opt.optimize_n_estimators(model,train,predictors,labels)
+
+param_test = {
+ 'max_depth':range(3,10,2),
+ 'min_child_weight':range(1,6,2)
+}
+opt.optimize_params(model,train,predictors,param_test)
+
+model.fit(train[predictors], labels)
+
+res= model.predict(test[predictors])
+
+print(res)
+
+
+f=open("./run_num.txt",mode='r')
+run_num=int(f.read())
+f.close()
+f=open("./run_num.txt",mode='w')
+run_num+=1
+f.write(str(run_num))
+f.close()
+
+ids = range(1461, (1461 + len(res)))
+result_df = pd.DataFrame({"Id": ids, "SalePrice": res})
+result_df.to_csv("./submission_"+str(run_num)+".csv",index=False)
+
+f=open("./params_"+str(run_num)+".txt",mode='w')
+f.write(str(model.get_params()))
+f.write("\n")
+f.write("tresh_deviation: "+str(_tresh_deviation)+"\n")
+f.write("tresh_importance: "+str(_tresh_importance)+"\n")
+f.write("tresh_similarity: "+str(_tresh_similarity)+"\n")
+f.close()
+
+
+
+
